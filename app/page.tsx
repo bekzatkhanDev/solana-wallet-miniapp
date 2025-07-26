@@ -47,6 +47,7 @@ export default function Home() {
 
       <button
         onClick={createWallet}
+        disabled={!telegramUser || loading}
         className={`px-4 py-2 rounded text-white ${(!telegramUser || loading) ? 'bg-gray-400' : 'bg-blue-500'}`}
       >
         {loading ? 'Создание...' : 'Создать кошелёк'}
