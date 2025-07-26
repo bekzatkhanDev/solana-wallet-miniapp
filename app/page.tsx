@@ -4,27 +4,37 @@ import { useEffect, useState } from 'react';
 
 export default function Home() {
   const [telegramUser, setTelegramUser] = useState<any>(null);
-  const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [wallets, setWallets] = useState([]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
-      const tg = (window as any).Telegram.WebApp;
-      tg.ready(); // обязательно вызываем
+    if (typeof window !== 'undefined') {
+      const tg = (window as any).Telegram?.WebApp;
+      
+      if (tg) {
+        tg.ready(); // важно!
+        const user = tg.initDataUnsafe?.user;
 
-      const user = tg.initDataUnsafe?.user;
-      if (user) {
-        setTelegramUser({
-          id: user.id,
-          username: user.username,
-          hash: tg.initData,
-        });
+        if (user) {
+          setTelegramUser({
+            id: user.id,
+            username: user.username,
+            hash: tg.initData
+          });
+        } else {
+          console.warn('initDataUnsafe.user отсутствует');
+        }
+      } else {
+        console.warn('Telegram WebApp недоступен');
       }
     }
   }, []);
 
   const createWallet = async () => {
-    if (!telegramUser) return alert("Telegram WebApp не инициализирован");
+    if (!telegramUser) {
+      alert("Telegram WebApp не инициализирован");
+      return;
+    }
 
     setLoading(true);
 
@@ -36,7 +46,7 @@ export default function Home() {
 
     const data = await res.json();
     if (data.wallets) setWallets(data.wallets);
-    else alert(data.error || 'Ошибка');
+    else alert(data.error || 'Ошибка при создании кошелька');
 
     setLoading(false);
   };
@@ -47,14 +57,14 @@ export default function Home() {
 
       <button
         onClick={createWallet}
-        className={`px-4 py-2 rounded text-white ${(!telegramUser || loading) ? 'bg-gray-400' : 'bg-blue-500'}`}
+        className="px-4 py-2 bg-blue-600 text-white rounded"
       >
         {loading ? 'Создание...' : 'Создать кошелёк'}
       </button>
 
       <div className="mt-4">
         {wallets.map((w, i) => (
-          <p key={i} className="text-sm mt-2 break-all">
+          <p key={i} className="text-sm break-all">
             {i + 1}. {w.publicKey}
           </p>
         ))}
