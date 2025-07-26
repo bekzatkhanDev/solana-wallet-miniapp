@@ -7,36 +7,36 @@ export default function Home() {
   const [wallets, setWallets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Инициализация Telegram WebApp
   useEffect(() => {
     const initTelegram = () => {
-      const tg = (window as any)?.Telegram?.WebApp;
+      const tg = (window as any).Telegram?.WebApp;
 
       if (tg) {
         tg.ready();
         const user = tg.initDataUnsafe?.user;
-        if (user) {
-          setTelegramUser({
-            id: user.id,
-            username: user.username,
-            hash: tg.initData,
-          });
+        const hash = tg.initData;
+
+        if (user && hash) {
+          setTelegramUser({ ...user, hash });
         } else {
-          console.warn('Telegram WebApp загружен, но user отсутствует');
+          console.warn('Telegram WebApp загружен, но user/hash отсутствуют');
         }
       } else {
-        // Мок-режим для локального браузера или вне Telegram
-        console.warn('Telegram WebApp недоступен. Используется mock-режим.');
+        console.warn('Telegram WebApp не найден. Используется MOCK-пользователь');
+        // Мок-пользователь для разработки вне Telegram
         setTelegramUser({
-          id: 123456789,
-          username: 'mock_user',
+          id: 999999,
+          username: 'dev_mock',
+          first_name: 'Mock',
+          auth_date: Math.floor(Date.now() / 1000),
           hash: 'mock_hash',
         });
       }
     };
 
     if (typeof window !== 'undefined') {
-      // Задержка нужна, чтобы Telegram успел подгрузиться
-      setTimeout(initTelegram, 200);
+      setTimeout(initTelegram, 200); // даём время Telegram загрузиться
     }
   }, []);
 
@@ -48,25 +48,30 @@ export default function Home() {
 
     setLoading(true);
 
-    const res = await fetch('/api/wallet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telegramUser }),
-    });
+    try {
+      const res = await fetch('/api/wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramUser }),
+      });
 
-    const data = await res.json();
-    if (data.wallets) {
-      setWallets(data.wallets);
-    } else {
-      alert(data.error || 'Ошибка при создании кошелька');
+      const data = await res.json();
+
+      if (res.ok && data.wallets) {
+        setWallets(data.wallets);
+      } else {
+        alert(data.error || 'Ошибка при создании кошелька');
+      }
+    } catch (error) {
+      alert('Ошибка сети');
     }
 
     setLoading(false);
   };
 
   return (
-    <main className="p-6">
-      <h1 className="text-xl font-bold mb-4">Solana Кошельки</h1>
+    <main className="p-4">
+      <h1 className="text-xl font-bold mb-4">🪙 Solana Mini App</h1>
 
       <button
         onClick={createWallet}
@@ -76,12 +81,17 @@ export default function Home() {
         {loading ? 'Создание...' : 'Создать кошелёк'}
       </button>
 
-      <div className="mt-6">
-        {wallets.map((wallet, index) => (
-          <p key={index} className="break-all text-sm">
-            {index + 1}. {wallet.publicKey}
-          </p>
-        ))}
+      <div className="mt-6 space-y-2">
+        {wallets.length > 0 && (
+          <>
+            <h2 className="font-semibold">Ваши кошельки:</h2>
+            {wallets.map((wallet, index) => (
+              <p key={index} className="text-sm break-all">
+                {index + 1}. {wallet.publicKey}
+              </p>
+            ))}
+          </>
+        )}
       </div>
     </main>
   );

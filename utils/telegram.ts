@@ -6,14 +6,14 @@ export function verifyTelegramPayload(payload: {
   first_name?: string;
   last_name?: string;
   photo_url?: string;
-  auth_date?: number;
+  auth_date: number;
   hash: string;
 }) {
   const { hash, ...rest } = payload;
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
-    console.error('TELEGRAM_BOT_TOKEN не установлен');
+    console.error('❌ TELEGRAM_BOT_TOKEN не задан');
     return false;
   }
 
@@ -28,5 +28,14 @@ export function verifyTelegramPayload(payload: {
     .update(dataCheckString)
     .digest('hex');
 
-  return hmac === hash;
+  const isValid = hmac === hash;
+
+  if (!isValid) {
+    console.warn('❌ Невалидная подпись Telegram!');
+    console.log('📃 DataCheckString:', dataCheckString);
+    console.log('🔐 HMAC:', hmac);
+    console.log('🔑 HASH:', hash);
+  }
+
+  return isValid;
 }
