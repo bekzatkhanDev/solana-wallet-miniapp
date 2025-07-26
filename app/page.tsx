@@ -7,7 +7,6 @@ export default function Home() {
   const [wallets, setWallets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Инициализация Telegram WebApp
   useEffect(() => {
     const initTelegram = () => {
       const tg = (window as any).Telegram?.WebApp;
@@ -15,20 +14,20 @@ export default function Home() {
       if (tg) {
         tg.ready();
         const user = tg.initDataUnsafe?.user;
-        const hash = tg.initData;
+        const hash = tg.initData; // ✅ именно initData, а не hash из initDataUnsafe
 
         if (user && hash) {
           setTelegramUser({ ...user, hash });
         } else {
-          console.warn('Telegram WebApp загружен, но user/hash отсутствуют');
+          console.warn('Telegram WebApp инициализирован, но user/hash отсутствуют');
         }
       } else {
-        console.warn('Telegram WebApp не найден. Используется MOCK-пользователь');
-        // Мок-пользователь для разработки вне Telegram
+        console.warn('Telegram WebApp не найден, включён mock-режим');
+        // ✅ Mock-пользователь для тестов в браузере
         setTelegramUser({
-          id: 999999,
-          username: 'dev_mock',
-          first_name: 'Mock',
+          id: 123456789,
+          username: 'dev_user',
+          first_name: 'Dev',
           auth_date: Math.floor(Date.now() / 1000),
           hash: 'mock_hash',
         });
@@ -36,7 +35,7 @@ export default function Home() {
     };
 
     if (typeof window !== 'undefined') {
-      setTimeout(initTelegram, 200); // даём время Telegram загрузиться
+      setTimeout(initTelegram, 300); // немного подождать загрузку Telegram WebApp
     }
   }, []);
 
@@ -62,8 +61,9 @@ export default function Home() {
       } else {
         alert(data.error || 'Ошибка при создании кошелька');
       }
-    } catch (error) {
+    } catch (err) {
       alert('Ошибка сети');
+      console.error(err);
     }
 
     setLoading(false);
@@ -71,11 +71,11 @@ export default function Home() {
 
   return (
     <main className="p-4">
-      <h1 className="text-xl font-bold mb-4">🪙 Solana Mini App</h1>
+      <h1 className="text-xl font-bold mb-4">Solana Wallet Mini App</h1>
 
       <button
-        onClick={createWallet}
         className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400"
+        onClick={createWallet}
         disabled={!telegramUser || loading}
       >
         {loading ? 'Создание...' : 'Создать кошелёк'}
@@ -85,9 +85,9 @@ export default function Home() {
         {wallets.length > 0 && (
           <>
             <h2 className="font-semibold">Ваши кошельки:</h2>
-            {wallets.map((wallet, index) => (
-              <p key={index} className="text-sm break-all">
-                {index + 1}. {wallet.publicKey}
+            {wallets.map((wallet, i) => (
+              <p key={i} className="text-sm break-all">
+                {i + 1}. {wallet.publicKey}
               </p>
             ))}
           </>
