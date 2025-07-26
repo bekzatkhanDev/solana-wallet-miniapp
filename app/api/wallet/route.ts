@@ -10,10 +10,16 @@ initFirebaseAdmin();
 export async function POST(req: NextRequest) {
   const db = getFirestore();
   const body = await req.json();
-  const { telegramUser } = body;
+  const telegramUser = body.telegramUser;
 
-  if (!verifyTelegramPayload(telegramUser)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (process.env.NODE_ENV === 'production') {
+    const isValid = verifyTelegramPayload(telegramUser);
+    if (!isValid) {
+      return new Response(JSON.stringify({ error: 'unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
   }
 
   const userRef = db.collection('users').doc(`${telegramUser.id}`);
