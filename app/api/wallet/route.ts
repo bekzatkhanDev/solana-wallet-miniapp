@@ -1,4 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+// app/api/wallet/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { initFirebaseAdmin } from '@/lib/firebase-admin';
 import { verifyTelegramPayload } from '@/utils/telegram';
@@ -6,12 +7,13 @@ import { createWallet } from '@/lib/solana';
 
 initFirebaseAdmin();
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export async function POST(req: NextRequest) {
   const db = getFirestore();
-  const { telegramUser } = req.body;
+  const body = await req.json();
+  const { telegramUser } = body;
 
   if (!verifyTelegramPayload(telegramUser)) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const userRef = db.collection('users').doc(`${telegramUser.id}`);
@@ -19,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let wallets = doc.exists ? doc.data()?.wallets || [] : [];
 
   if (wallets.length >= 5) {
-    return res.status(400).json({ error: 'Максимум 5 кошельков' });
+    return NextResponse.json({ error: 'Максимум 5 кошельков' }, { status: 400 });
   }
 
   const newWallet = createWallet();
@@ -36,5 +38,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     timestamp: new Date().toISOString()
   });
 
-  return res.status(200).json({ wallets });
+  return NextResponse.json({ wallets });
 }
